@@ -1,0 +1,26 @@
+import { useCallback, useState } from 'react';
+import { ApiError, toApiError } from '@/shared/api';
+
+export function useAction<Args extends unknown[]>(action: (...args: Args) => Promise<void>) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const run = useCallback(
+    async (...args: Args) => {
+      setPending(true);
+      setError(null);
+      try {
+        await action(...args);
+      } catch (caught) {
+        const next = toApiError(caught);
+        setError(next);
+        throw next;
+      } finally {
+        setPending(false);
+      }
+    },
+    [action],
+  );
+
+  return { pending, error, setError, run };
+}
